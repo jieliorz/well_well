@@ -1,0 +1,4 @@
+*.pyc
+/data
+/release
+__pycache__

@@ -31,6 +31,7 @@ def produce_semi(params):
 	src_writer.close()
 	tgt_writer.close()
 
+
 ##################################################################################################################
 
 
@@ -40,7 +41,8 @@ def feature_sent_iter(file,tool):
 	with open(file,'r') as f:
 		for line in f:
 			line = line.strip()
-			feature = tool.encode(line)
+			feature = tool.encode(line,padding=True,start_mark=True,end_mark=True)
+			print(feature)
 			yield feature
 
 def feature_lable_iter(file,labels):

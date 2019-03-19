@@ -25,6 +25,14 @@ SOS = '<s>' # sos_id:2
 EOS = '</s>' # eos_id:3
 NUM = '<num>' # num_id:4
 SEP = '<sep>' # sep:
+
+PAD_ID = 0
+UNK_ID = 1
+SOS_ID = 2
+EOS_ID = 3
+NUM_ID = 4
+SEP_ID = 5
+
 RESERVED_TOKENS = [PAD,UNK,SOS,EOS,NUM,SEP]
 
 
@@ -233,7 +241,6 @@ def _generate_subtokens(token_counts, alphabet, min_count,num_iterations=4):
     # Use alphabet set to create initial list of subtokens
     subtoken_list = list(alphabet)
     max_subtoken_length = 2
-    reserved_tokens = RESERVED_TOKENS
     # On each iteration, segment all words using the subtokens defined in
     # subtoken_dict, count how often the resulting subtokens appear, and update
     # the dictionary with subtokens w/ high enough counts.
@@ -248,7 +255,7 @@ def _generate_subtokens(token_counts, alphabet, min_count,num_iterations=4):
 
         # Generate new list of subtokens sorted by subtoken count.
         subtoken_list, max_subtoken_length = _gen_new_subtoken_list(
-                subtoken_counts, min_count, alphabet, reserved_tokens)
+                subtoken_counts, min_count, alphabet, RESERVED_TOKENS)
 
     return subtoken_list
 
@@ -290,20 +297,38 @@ class Tokenizer:
 
 
     if self.params['update_vocab'] or not os.path.isfile(self.vocab_file):
-      subtoken_list = self.make_vocab()
+      self.subtoken_to_id_dict = self.make_vocab()
     else:
-      self.subtoken_list = RESERVED_TOKENS +  [subtoken.strip() for subtoken in open(self.vocab_file,'r').readlines()]
+      self.subtoken_list = [subtoken.strip() for subtoken in open(self.vocab_file,'r').readlines()]
     self.subtoken_to_id_dict = _list_to_index_dict(self.subtoken_list)
+    assert self.subtoken_to_id_dict[PAD]==PAD_ID
+    assert self.subtoken_to_id_dict[UNK]==UNK_ID
+    assert self.subtoken_to_id_dict[SEP]==SEP_ID
+    assert self.subtoken_to_id_dict[NUM]==NUM_ID
+    assert self.subtoken_to_id_dict[SOS]==SOS_ID
+    assert self.subtoken_to_id_dict[EOS]==EOS_ID
+
     self.alphabet = _generate_alphabet_dict(self.subtoken_list)
 
 
-  def encode(self,raw_string):
+  def encode(self,raw_string,padding=False,start_mark=False,end_mark=False):
     """Encodes a string into a list of int subtoken ids."""
     ret = []
     tokens = split_text(raw_string)
 
     for token in tokens:
       ret.extend(self._token_to_subtoken_ids(token))
+
+    if start_mark:
+      ret = [SOS_ID] + ret
+    if end_mark:
+      ret = ret + [EOS_ID]
+
+    if padding:
+      if len(ret) > self.params['max_length']:
+        ret = ret[:self.params['max_length']]
+      else:
+        ret.extend([PAD_ID]*(self.params['max_length']-len(ret)))
     return ret 
 
   def decode(self,subtokens):

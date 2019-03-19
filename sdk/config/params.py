@@ -10,6 +10,7 @@ class Config:
     def __init__(self, 
                 project_name,
                 model_type,
+                max_length,
                 is_tgt_label=False,
                 update_semi=False,
                 update_vocab=False,
@@ -28,7 +29,8 @@ class Config:
             'update_vocab': update_vocab,
             'update_dataset': update_dataset,
             'n_observations': n_observations,
-            'is_tgt_label':is_tgt_label
+            'is_tgt_label':is_tgt_label,
+            'max_length':max_length,
             }
 
 
