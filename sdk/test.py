@@ -13,7 +13,7 @@ params = Config(project_name='douban',
 # t=Tokenizer(params)
 
 
-semi_to_dataset(params)
+# semi_to_dataset(params)
 
 
 
