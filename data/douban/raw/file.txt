@@ -1,3 +1,0 @@
-我想吃饭	meal
-我想睡觉	sleep
-我想唱歌	sing
