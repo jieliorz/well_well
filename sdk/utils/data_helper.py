@@ -42,14 +42,23 @@ class Dataset:
             return tf.parse_single_example(record,feature_description)
 
         dataset=raw_dataset.map(parse)
-
-        iterator=dataset.make_one_shot_iterator()
-        next_element=iterator.get_next()
+        return dataset
 
 
 
-        sess=tf.Session()
-        value=sess.run(next_element)
-        # example_proto = tf.train.Example.FromString(value)
-        print(value)
-        # print(type(example_proto))
+
+
+        # dataset = dataset.shuffle(buffer_size=10000)
+        # dataset = dataset.batch(32)
+        # dataset = dataset.repeat(3)
+
+        # iterator=dataset.make_one_shot_iterator()
+        # next_element=iterator.get_next()
+
+
+
+        # sess=tf.Session()
+        # value=sess.run(next_element)
+        # # example_proto = tf.train.Example.FromString(value)
+        # print(value)
+        # # print(type(example_proto))

@@ -11,11 +11,9 @@ params = Config(project_name='douban',
 				is_tgt_label=True,
 				n_observations=10).params
 
-t=Tokenizer(params)
-produce_semi(params)
+# t=Tokenizer(params)
+# produce_semi(params)
 
-semi_to_dataset(params)
-
-
+# semi_to_dataset(params)
 
 Dataset(params)
