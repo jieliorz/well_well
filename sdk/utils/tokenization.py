@@ -46,7 +46,7 @@ def split_text(text):
   if not text:
     return []
   tokens = jieba.lcut(text)
-  print(tokens)
+  # print(tokens)
   return tokens
 
 def _escape_token(token, alphabet):
@@ -297,7 +297,7 @@ class Tokenizer:
 
 
     if self.params['update_vocab'] or not os.path.isfile(self.vocab_file):
-      self.subtoken_to_id_dict = self.make_vocab()
+      self.subtoken_list = self.make_vocab()
     else:
       self.subtoken_list = [subtoken.strip() for subtoken in open(self.vocab_file,'r').readlines()]
     self.subtoken_to_id_dict = _list_to_index_dict(self.subtoken_list)
@@ -309,7 +309,7 @@ class Tokenizer:
     assert self.subtoken_to_id_dict[EOS]==EOS_ID
 
     self.alphabet = _generate_alphabet_dict(self.subtoken_list)
-
+    self.vocab_size = len(self.subtoken_list)
 
   def encode(self,raw_string,padding=False,start_mark=False,end_mark=False):
     """Encodes a string into a list of int subtoken ids."""
@@ -323,13 +323,13 @@ class Tokenizer:
       ret = [SOS_ID] + ret
     if end_mark:
       ret = ret + [EOS_ID]
-
+    ret_len = len(ret)
     if padding:
-      if len(ret) > self.params['max_length']:
+      if ret_len > self.params['max_length']:
         ret = ret[:self.params['max_length']]
       else:
-        ret.extend([PAD_ID]*(self.params['max_length']-len(ret)))
-    return ret 
+        ret.extend([PAD_ID]*(self.params['max_length']-ret_len))
+    return ret,ret_len
 
   def decode(self,subtokens):
     """Converts list of int subtokens ids into a string."""

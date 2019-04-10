@@ -75,15 +75,16 @@ class Config:
 
 
 
-
-
     def _dir_create(self,file_dir):
         if not os.path.isdir(file_dir):
             os.makedirs(file_dir)
 
+    def set_params(self,config_params):
+        self.init_params.update(config_params)
 
     @property
     def params(self):
+        # 加上模型配置
         model_params_file = os.path.join(self.init_params['model_dir'],'model_params.yml')
         with open(model_params_file,'r') as f:
             model_params = yaml.load(f)
