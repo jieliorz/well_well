@@ -376,7 +376,7 @@ class Tokenizer:
   def make_vocab(self,min_count=4):
     datafiles=[self.params['src_file']]
     if not self.params['is_tgt_label']:
-      datafiles.append('tgt_file')
+      datafiles.append(self.params['tgt_file'])
     token_counts=_count_tokens(files=datafiles)
     alphabet = _generate_alphabet_dict(token_counts)
     subtoken_list = _generate_subtokens(

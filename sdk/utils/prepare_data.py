@@ -9,6 +9,8 @@ def read_raw_files(files):
 		with open(file,'r') as f:
 			for line in f:
 				line = line.strip()
+				if len(line.split('\t')) != 2:
+					continue
 				src = line.split('\t')[0]
 				tgt = line.split('\t')[1]
 				yield src,tgt
@@ -112,11 +114,11 @@ def semi_to_dataset(params,tokenizer):
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
 	dataset_file = params['dataset_file']
-	labels = params['labels']
-	
+
 	with tf.python_io.TFRecordWriter(dataset_file) as writer:
 		src_iter = feature_sent_iter(src_file,tokenizer)
 		if params['is_tgt_label']:
+			labels = params['labels']
 			tgt_iter  = feature_lable_iter(tgt_file,labels)
 		else:
 			tgt_iter  = feature_sent_iter(tgt_file,tokenizer)

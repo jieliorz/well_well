@@ -3,8 +3,8 @@ from utils.prepare_data import semi_to_dataset,produce_semi
 from utils.tokenization import Tokenizer
 from utils.data_helper import DataSet
 
-config = Config(project_name='poc',
-				model_type='rnn',
+config = Config(project_name='moli',
+				model_type='seq2seq',
 				max_length=None,
 				is_tgt_label=True,
 				update_vocab=False,
