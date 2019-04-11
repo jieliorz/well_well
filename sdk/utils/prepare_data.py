@@ -57,12 +57,12 @@ def produce_semi(params):
 
 
 
-def feature_sent_iter(file,tool):
+def feature_sent_iter(file,tool,padding=False,start_mark=False,end_mark=False):
 	"""yield list of int"""
 	with open(file,'r') as f:
 		for line in f:
 			line = line.strip()
-			line_encode,line_len = tool.encode(line,padding=False,start_mark=False,end_mark=False)
+			line_encode,line_len = tool.encode(line,padding=padding,start_mark=start_mark,end_mark=end_mark)
 			yield line_encode,line_len
 
 def feature_lable_iter(file,labels):
@@ -116,12 +116,12 @@ def semi_to_dataset(params,tokenizer):
 	dataset_file = params['dataset_file']
 
 	with tf.python_io.TFRecordWriter(dataset_file) as writer:
-		src_iter = feature_sent_iter(src_file,tokenizer)
+		src_iter = feature_sent_iter(src_file,tokenizer,padding=True,start_mark=False,end_mark=True)
 		if params['is_tgt_label']:
 			labels = params['labels']
 			tgt_iter  = feature_lable_iter(tgt_file,labels)
 		else:
-			tgt_iter  = feature_sent_iter(tgt_file,tokenizer)
+			tgt_iter  = feature_sent_iter(tgt_file,tokenizer,padding=True,start_mark=False,end_mark=True)
 
 		while 1:
 			try:

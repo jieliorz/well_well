@@ -17,15 +17,14 @@ class Seq2SeqModel:
 		with open('./params.json','r') as f:
 			self.params=json.load(f)
 
-		self.save_dir=self.params["save_dir"]
+		self.save_file=self.params["save_file"]
 		self.num_epochs=self.params["num_epochs"]
 		self.batch_size=self.params["batch_size"]
 		self.vocab_size=self.params["vocab_size"]
 		self.embedding_size=self.params["embedding_size"]
 		self.hidden_size=self.params["hidden_size"]
 		self.learning_rate=self.params["learning_rate"]
-		self.mode=self.params["mode"]
-		self.droupout=self.params["droupout"]
+		self.keep_prob=self.params["droupout"]
 		self.maximum_iterations=self.params['maximum_iterations']
 		
 		if self.mode == 'infer':
@@ -34,11 +33,12 @@ class Seq2SeqModel:
 				self.build_graph()
 				self.saver = tf.train.Saver()
 				self.sess = tf.Session()
-				self.saver.restore(self.sess,self.save_dir)
+				self.saver.restore(self.sess,self.save_file)
 
 	def build_graph(self):
 
 		self.src = tf.placeholder(tf.int32,[self.batch_size,None],name="src")
+		self.tgt = tf.placeholder(tf.int32,[self.batch_size,None],name="tgt")
 		self.tgt_in = tf.placeholder(tf.int32,[self.batch_size,None],name="tgt_in")
 		self.tgt_out = tf.placeholder(tf.int32,[self.batch_size,None],name="tgt_out")
 
@@ -81,9 +81,13 @@ class Seq2SeqModel:
 					self.projection_layer,self.maximum_iterations)
 
 
-	def train(self,batch_iter,tokenizer):
+	def train(self):
+
+		dataset_obj=DataSet(self.params)
+		dataset=dataset_obj.prepare_dataset()
+
 		init_train=self.params['init_train']
-		droupout=self.params['droupout']
+
 		g=tf.Graph()
 		with g.as_default():
 			self.build_graph()
@@ -94,15 +98,32 @@ class Seq2SeqModel:
 				if init_train:
 					sess.run(init)
 				else:
-					self.saver.restore(sess,self.save_dir)
-				
-				for i,batch in enumerate(batch_iter):
-					# src_total,tgt_in_total,tgt_out_total,src_lengths,tgt_lengths
-					src=[each[0] for each in batch]
-					tgt_in=[each[1] for each in batch]
-					tgt_out=[each[2] for each in batch]
-					src_lengths=[each[3] for each in batch]
-					tgt_lengths=[each[4] for each in batch]
+					self.saver.restore(sess,self.save_file)
+
+				iterator=dataset.make_one_shot_iterator()
+				next_element=iterator.get_next()
+				while 1:
+					try:
+						batch=sess.run(next_element)
+
+						feed_dict = {
+								self.src: batch['src'],
+								self.tgt: batch['tgt'],
+								self.dropout_keep_prob: self.keep_prob,
+								self.raw_seq_len: batch['src_len']
+								}
+						_, step, loss, accuracy = sess.run(
+						[self.train_op, self.global_step, self.loss, self.accuracy],
+						feed_dict)
+						if step%100 == 0:
+							print('train step:{} loss:{} accuracy:{}'.format(step,loss,accuracy))
+					except tf.errors.OutOfRangeError:
+						print('over')
+						break
+
+			self.saver.save(sess,save_file)
+
+
 
 					feed_dict = {
 							self.src: src,
@@ -126,7 +147,8 @@ class Seq2SeqModel:
 						logger.info("break step:{},loss:{}".format(step,loss))
 						break
 				logger.info("last train step:{} loss:{}".format(step,loss))
-				self.saver.save(sess,self.save_dir)
+
+
 				
 	def infer(self,subtoken):
 		droupout=1.0

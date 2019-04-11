@@ -64,4 +64,4 @@ class DataSet:
         #         break
         # # example_proto = tf.train.Example.FromString(value)
  
-        # # print(type(example_proto))
+        # # # print(type(example_proto))

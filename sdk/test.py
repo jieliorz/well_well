@@ -2,7 +2,7 @@ from config.params import Config
 from utils.prepare_data import semi_to_dataset,produce_semi
 from utils.tokenization import Tokenizer
 from utils.data_helper import DataSet
-# from model.rnn.rnnModel import TextRnn
+import os
 import json
 config = Config(project_name='moli',
 				model_type='seq2seq',
@@ -11,7 +11,7 @@ config = Config(project_name='moli',
 				max_length=None,
 				is_tgt_label=False,
 				update_vocab=True,
-				n_observations=None)
+				n_observations=10)
 
 if config.init_params['update_semi']:
 	# raw to semi
@@ -31,12 +31,12 @@ if config.init_params['update_dataset']:
 	semi_to_dataset(config.params,tokenizer)
 
 
-final_params_path = os.join(config.init_params['model_dir'],'params.json')
+final_params_path = os.path.join(config.init_params['model_dir'],'params.json')
 with open(final_params_path,'w') as f:
 	json.dump(config.init_params,f)
 
-# dataset_obj=DataSet(config.params)
-# dataset=dataset_obj.prepare_dataset()
+dataset_obj=DataSet(config.params)
+dataset=dataset_obj.prepare_dataset()
 
 # model=TextRnn(config.params)
 # model.train(dataset)

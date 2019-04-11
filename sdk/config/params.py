@@ -15,8 +15,7 @@ class Config:
                 update_semi=False,
                 update_vocab=False,
                 update_dataset=False,
-                n_observations=None
-                                ):
+                n_observations=None):
 
 
         self.init_params={
@@ -72,7 +71,6 @@ class Config:
         self.init_params['raw_data_dir'] = raw_data_dir
         self.init_params['model_dir'] = model_dir
         self.init_params['dataset_file'] = dataset_file
-
 
 
     def _dir_create(self,file_dir):
