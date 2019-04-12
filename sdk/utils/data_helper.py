@@ -30,6 +30,7 @@ class DataSet:
     def prepare_dataset(self):
         raw_dataset = tf.data.TFRecordDataset(self.filenames)
         max_length=self.params['max_length']
+
         if self.params['is_tgt_label']:
         	tgt_max_length = 1
         else:
@@ -41,14 +42,16 @@ class DataSet:
                "src": tf.FixedLenFeature([max_length], tf.int64),
                "tgt": tf.FixedLenFeature([tgt_max_length], tf.int64),
                "src_len":tf.FixedLenFeature([1], tf.int64),
-               # "tgt_len":tf.FixedLenFeature([1], tf.int64),
+               "tgt_len":tf.FixedLenFeature([1], tf.int64),
                 }
             return tf.parse_single_example(record,feature_description)
 
-        dataset=raw_dataset.map(parse)
+        dataset = raw_dataset.map(parse)
         dataset = dataset.shuffle(self.buffer_size)
-        dataset = dataset.batch(self.batch_size)
+        # dataset = dataset.batch(self.batch_size)
+        dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(self.batch_size))
         dataset = dataset.repeat(self.num_epochs)
+
         return dataset
 
         # iterator=dataset.make_one_shot_iterator()

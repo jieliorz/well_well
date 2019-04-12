@@ -1,10 +1,8 @@
 
 
 # model
-# train or infer
-mode: infer
-init_train: false
-droupout: 0.7
+init_train: True
+keep_prob: 0.7
 hidden_size: 128
 embedding_size: 128
 learning_rate: 0.002

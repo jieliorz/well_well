@@ -1,0 +1,7 @@
+{batch_size: 32, beam_width: 3, dataset_file: ../data/moli/dataset/dataset.tfrecord,
+  decode_mode: greedy, embedding_size: 128, hidden_size: 128, init_train: true, is_tgt_label: false,
+  keep_prob: 0.7, learning_rate: 0.002, max_length: 50, model_dir: model/seq2seq,
+  n_observations: 10000, num_epochs: 10, project_name: moli, raw_data_dir: ../data/moli/raw,
+  save_file: ../release/moli/model/seq2seq/model.ckpt, src_file: ../data/moli/semi/src.txt,
+  tgt_file: ../data/moli/semi/tgt.txt, update_dataset: true, update_semi: true, update_vocab: true,
+  vocab_file: ../release/moli/vocab/vocab.txt, vocab_size: 25167}

@@ -22,36 +22,20 @@ def produce_semi(params):
 	raw_data_dir = params['raw_data_dir']
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
-	n_observations = params['n_observations']
-	max_length = params['max_length']
+	# n_observations = params['n_observations']
+	# max_length = params['max_length']
 
 	raw_files = glob.glob(os.path.join(raw_data_dir,'*.txt'))
 	iterator = read_raw_files(raw_files)
 	src_writer = open(src_file,'w')
 	tgt_writer = open(tgt_file,'w')
-	cnt = 1
-	max_len = 0
+
 	for src,tgt in iterator:
-		if n_observations:
-			if cnt > n_observations:
-				break
-		src_len = len(src.strip())
-		if src_len > max_len:
-			max_len = src_len
-		if not params['is_tgt_label']:
-			tgt_len = len(tgt.strip())
-			if tgt_len > max_len:
-				max_len = tgt_len
 		src_writer.write(src.strip()+'\n')
 		tgt_writer.write(tgt.strip()+'\n')
-		cnt+=1
 
-		
 	src_writer.close()
 	tgt_writer.close()
-	n_observations = cnt-1
-	return n_observations,max_len
-
 
 ##################################################################################################################
 
@@ -114,23 +98,34 @@ def semi_to_dataset(params,tokenizer):
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
 	dataset_file = params['dataset_file']
-
+	n_observations = params['n_observations']
 	with tf.python_io.TFRecordWriter(dataset_file) as writer:
-		src_iter = feature_sent_iter(src_file,tokenizer,padding=True,start_mark=False,end_mark=True)
+		src_iter = feature_sent_iter(src_file,tokenizer,padding=True,start_mark=False,end_mark=False)
 		if params['is_tgt_label']:
 			labels = params['labels']
 			tgt_iter  = feature_lable_iter(tgt_file,labels)
 		else:
-			tgt_iter  = feature_sent_iter(tgt_file,tokenizer,padding=True,start_mark=False,end_mark=True)
-
+			tgt_iter  = feature_sent_iter(tgt_file,tokenizer,padding=True,start_mark=True,end_mark=True)
+		cnt=0
 		while 1:
 			try:
 				src,src_len = next(src_iter)
 				tgt,tgt_len = next(tgt_iter)
+				if not src:
+					continue
+				if not tgt:
+					continue
 				example = serialize_example(src,tgt,src_len,tgt_len)
 				writer.write(example)
+				cnt+=1
+				if n_observations:
+					if cnt > n_observations:
+						break
 			except StopIteration:
 				print('over')
 				break
+		n_observations = cnt - 1
+		return n_observations
+
 
 

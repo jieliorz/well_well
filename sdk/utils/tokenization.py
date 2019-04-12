@@ -311,24 +311,30 @@ class Tokenizer:
     self.alphabet = _generate_alphabet_dict(self.subtoken_list)
     self.vocab_size = len(self.subtoken_list)
 
-  def encode(self,raw_string,padding=False,start_mark=False,end_mark=False):
+  def encode(self,raw_string,padding=True,start_mark=False,end_mark=False):
     """Encodes a string into a list of int subtoken ids."""
     ret = []
     tokens = split_text(raw_string)
+    
 
     for token in tokens:
       ret.extend(self._token_to_subtoken_ids(token))
-
+    ret_len = len(ret)
+    ret_padding_len = ret_len
     if start_mark:
       ret = [SOS_ID] + ret
+      ret_padding_len += 1
     if end_mark:
       ret = ret + [EOS_ID]
-    ret_len = len(ret)
+      ret_padding_len += 1
     if padding:
-      if ret_len > self.params['max_length']:
-        ret = ret[:self.params['max_length']]
+      padding_len = self.params['max_length']
+      if ret_padding_len > padding_len:
+        return None,None
+        # print(raw_string,ret_padding_len)
+        # raise 'padding sentence longer than maximum len'
       else:
-        ret.extend([PAD_ID]*(self.params['max_length']-ret_len))
+        ret.extend([PAD_ID]*(padding_len-ret_padding_len))
     return ret,ret_len
 
   def decode(self,subtokens):
