@@ -17,12 +17,12 @@ def get_learning_rate(learning_rate,hidden_size,learning_rate_warmup_steps=160):
 
 
 
-def get_loss(logits,tgt_out,tgt_lengths,maximum_iterations,batch_size):
+def get_loss(logits,tgt_out,tgt_lengths,maximum_iterations):
 	with tf.name_scope('loss'):
 		crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
 		labels=tgt_out, logits=logits)
 		target_weights = tf.sequence_mask(tgt_lengths, maximum_iterations, dtype=tf.float32)
-		loss = tf.reduce_sum(crossent * target_weights)/batch_size
+		loss = tf.reduce_sum(crossent * target_weights)/tf.to_float(tf.reduce_sum(tgt_lengths))
 		return loss
 
 def get_train_op(learning_rate,loss,global_step):

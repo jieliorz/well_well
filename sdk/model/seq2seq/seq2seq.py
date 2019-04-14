@@ -8,12 +8,13 @@ from .get_encoder import get_unbi_encoder,get_bi_encoder
 from .get_decoder import get_unbi_train_decoder,get_unbi_decoder
 from .get_learning_rate_and_loss import get_loss,get_train_op
 import logging
+from utils.tokenization import Tokenizer,EOS_ID,SOS_ID
 from .greedy import greedy_decode
 from .beam_search import beam_search_decode
 import os
 import yaml
 from utils.data_helper import DataSet
-
+from utils.pre_process import pre_process
 fpath = os.path.dirname(__file__)
 logger = logging.getLogger('seq2seq')
 
@@ -77,7 +78,7 @@ class Seq2SeqModel:
 			self.build_graph()
 			self.logits=get_unbi_train_decoder(self.tgt_in_embedding,self.encoder_state,self.decoder_cell,self.hidden_size,
 				self.batch_size,self.maximum_iterations,self.projection_layer)
-			self.loss = get_loss(self.logits,self.tgt_out,self.tgt_lengths,self.maximum_iterations,self.batch_size)
+			self.loss = get_loss(self.logits,self.tgt_out,self.tgt_lengths,self.maximum_iterations)
 			tf.summary.scalar('loss', self.loss)
 			self.output = tf.argmax(self.logits,-1)
 			self.train_op = get_train_op(self.learning_rate,self.loss,self.global_step)
@@ -118,46 +119,47 @@ class Seq2SeqModel:
 
 
 
-	# def infer(self,subtoken):
+	def infer(self,batch_size):
+		self.tokenizer = Tokenizer(self.params)
+		self.g=tf.Graph()
+		with self.g.as_default():
+			self.build_graph()
+			decode_mode=self.params['decode_mode']
+			sos_id=SOS_ID
+			eos_id=EOS_ID
+			if decode_mode == 'greedy':
+				self.output=greedy_decode(batch_size,sos_id,eos_id,self.embeddings,
+					self.decoder_cell,self.encoder_state,self.projection_layer,
+					self.maximum_iterations)
+			elif decode_mode == 'beam_search':
+				beam_width=self.params['beam_width']
+				self.output=beam_search_decode(batch_size,sos_id,eos_id,
+					self.embeddings,self.encoder_state,self.decoder_cell,beam_width,
+					self.projection_layer,self.maximum_iterations)
 
-	# 	self.g=tf.Graph()
-	# 	with self.g.as_default():
-	# 		self.build_graph()
-	# 		decode_mode=self.params['decode_mode']
-	# 		sos_id='<s>'
-	# 		eos_id='</s>'
-	# 		if decode_mode == 'greedy':
-	# 			self.output=greedy_decode(self.batch_size,sos_id,eos_id,self.embeddings,
-	# 				self.decoder_cell,self.encoder_state,self.projection_layer,
-	# 				self.maximum_iterations)
-	# 		elif decode_mode == 'beam_search':
-	# 			beam_width=self.params['beam_width']
-	# 			self.output=beam_search_decode(self.batch_size,sos_id,eos_id,
-	# 				self.embeddings,self.encoder_state,self.decoder_cell,beam_width,
-	# 				self.projection_layer,self.maximum_iterations)
+			self.saver = tf.train.Saver()
+			self.sess = tf.Session()
+			self.saver.restore(self.sess,self.save_file)
+
+	def predict(self,sentence):
+		keep_prob=1.0
+		beam_width = self.params['beam_width']
+		with self.sess.as_default():
+			# src_total,tgt_in_total,tgt_out_total,src_lengths,tgt_lengths
+			ret,ret_len = self.tokenizer.encode(pre_process(sentence))
+
+			feed_dict = {
+					self.src: [ret,ret],
+					self.dropout_keep_prob: keep_prob,
+					self.raw_src_len: [[ret_len],[ret_len]],
+					}
+			output= self.sess.run([self.output],feed_dict)
+			# print(output[0],output[0][0].dtype)
+			# logger.info("batch output:{}".format(output))
+			# print(self.tokenizer.decode([int(i) for i in list(output[0][0])]))
 
 
 
-			# self.saver = tf.train.Saver()
-			# self.sess = tf.Session()
-			# self.saver.restore(self.sess,self.save_file)
-
-			# droupout=1.0
-			# with self.sess.as_default():
-			# 	# src_total,tgt_in_total,tgt_out_total,src_lengths,tgt_lengths
-			# 	src=[subtoken]
-			# 	src_lengths=[len(subtoken)]
-			# 	feed_dict = {
-			# 			self.src: src,
-			# 			self.dropout_keep_prob:droupout,
-			# 			self.src_lengths:src_lengths,
-			# 			}
-			# 	output= self.sess.run([self.output],feed_dict)
-			# 	# print(output[0],output[0][0].dtype)
-			# 	# logger.info("batch output:{}".format(output))
-			# 	return output[0]
-
-
-
-			# 		# for i in range(beam_width):
-			# 		# 	res=[int(i[0]) for i in list(output[i][0])]
+			for i in range(beam_width):
+				res=self.tokenizer.decode([int(x) for x in list(output[0][i])])
+				print(res)

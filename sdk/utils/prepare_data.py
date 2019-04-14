@@ -2,6 +2,7 @@ import glob
 import os
 import jieba
 from .tokenization import Tokenizer
+from .pre_process import pre_process
 import tensorflow as tf
 ##################################################################################################################
 def read_raw_files(files):
@@ -26,16 +27,25 @@ def produce_semi(params):
 	# max_length = params['max_length']
 
 	raw_files = glob.glob(os.path.join(raw_data_dir,'*.txt'))
+	print('semi from: {}'.format(raw_files))
 	iterator = read_raw_files(raw_files)
 	src_writer = open(src_file,'w')
 	tgt_writer = open(tgt_file,'w')
 
 	for src,tgt in iterator:
+		src=pre_process(src,keep_sep=True)
+		if not src:
+			continue
+		tgt=pre_process(tgt,keep_sep=True)
+		if not tgt:
+			continue		
 		src_writer.write(src.strip()+'\n')
 		tgt_writer.write(tgt.strip()+'\n')
 
 	src_writer.close()
 	tgt_writer.close()
+	print('semi src_file: {} saved'.format(src_file))
+	print('semi tgt_file: {} saved'.format(tgt_file))
 
 ##################################################################################################################
 

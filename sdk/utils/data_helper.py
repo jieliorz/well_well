@@ -48,8 +48,8 @@ class DataSet:
 
         dataset = raw_dataset.map(parse)
         dataset = dataset.shuffle(self.buffer_size)
-        # dataset = dataset.batch(self.batch_size)
-        dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(self.batch_size))
+        dataset = dataset.batch(self.batch_size,drop_remainder=True)
+        # dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(self.batch_size))
         dataset = dataset.repeat(self.num_epochs)
 
         return dataset

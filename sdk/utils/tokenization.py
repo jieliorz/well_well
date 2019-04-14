@@ -5,7 +5,6 @@ import unicodedata
 import six
 import sys
 import re
-import os
 import glob
 import pickle
 from collections import defaultdict
@@ -36,18 +35,25 @@ SEP_ID = 5
 RESERVED_TOKENS = [PAD,UNK,SOS,EOS,NUM,SEP]
 
 
-
-
-def split_text(text):
-  """Runs basic whitespace cleaning and splitting on a piece of text.
-  可以优化
-  """
+def whitespace_tokenize(text):
+  """Runs basic whitespace cleaning and splitting on a piece of text."""
   text = text.strip()
   if not text:
     return []
-  tokens = jieba.lcut(text)
-  # print(tokens)
+  tokens = text.split()
   return tokens
+
+
+# def split_text(text):
+#   """Runs basic whitespace cleaning and splitting on a piece of text.
+#   可以优化
+#   """
+#   text = text.strip()
+#   if not text:
+#     return []
+#   tokens = jieba.lcut(text)
+#   # print(tokens)
+#   return tokens
 
 def _escape_token(token, alphabet):
   r"""Replace characters that aren't in the alphabet and append "_" to token.
@@ -224,7 +230,7 @@ def _generate_alphabet_dict(iterable):
   alphabet |= _ESCAPE_CHARS  # Add escape characters to alphabet set.
   return alphabet
 
-def _generate_subtokens(token_counts, alphabet, min_count,num_iterations=4):
+def _generate_subtokens(token_counts, alphabet, min_count,reserved_tokens,num_iterations=4):
     """Create a list of subtokens in decreasing order of frequency.
     Args:
         token_counts: dict mapping str tokens -> int count
@@ -255,7 +261,7 @@ def _generate_subtokens(token_counts, alphabet, min_count,num_iterations=4):
 
         # Generate new list of subtokens sorted by subtoken count.
         subtoken_list, max_subtoken_length = _gen_new_subtoken_list(
-                subtoken_counts, min_count, alphabet, RESERVED_TOKENS)
+                subtoken_counts, min_count, alphabet, reserved_tokens)
 
     return subtoken_list
 
@@ -280,7 +286,7 @@ def _count_tokens(files, file_byte_limit=1e6):
       counter = 0
       for line in reader:
           # Add words to token counts
-          for token in split_text(line):
+          for token in whitespace_tokenize(line):
             token_counts[token] += 1
   return token_counts
 
@@ -296,8 +302,14 @@ class Tokenizer:
     self.vocab_file = self.params['vocab_file']
 
 
-    if self.params['update_vocab'] or not os.path.isfile(self.vocab_file):
-      self.subtoken_list = self.make_vocab()
+    if self.params['update_vocab'] or (not os.path.isfile(self.vocab_file)):
+      print('start to generate vocab')
+      min_count = self.params['min_count']
+      extra_reserved_tokens = self.params['extra_reserved_tokens']
+      print('extra_reserved_tokens:{}'.format(extra_reserved_tokens))
+      if extra_reserved_tokens:
+        RESERVED_TOKENS.extend(extra_reserved_tokens)
+      self.subtoken_list = self.make_vocab(min_count)
     else:
       self.subtoken_list = [subtoken.strip() for subtoken in open(self.vocab_file,'r').readlines()]
     self.subtoken_to_id_dict = _list_to_index_dict(self.subtoken_list)
@@ -314,7 +326,7 @@ class Tokenizer:
   def encode(self,raw_string,padding=True,start_mark=False,end_mark=False):
     """Encodes a string into a list of int subtoken ids."""
     ret = []
-    tokens = split_text(raw_string)
+    tokens = whitespace_tokenize(raw_string)
     
 
     for token in tokens:
@@ -380,16 +392,19 @@ class Tokenizer:
         ret.append(token)
     return ret
   def make_vocab(self,min_count=4):
+
     datafiles=[self.params['src_file']]
     if not self.params['is_tgt_label']:
       datafiles.append(self.params['tgt_file'])
+    print('vocab from: {}'.format(datafiles))
     token_counts=_count_tokens(files=datafiles)
     alphabet = _generate_alphabet_dict(token_counts)
     subtoken_list = _generate_subtokens(
-        token_counts, alphabet, min_count)  
+        token_counts, alphabet, min_count,RESERVED_TOKENS)  
     
     # logger.info('vocab_size: {}'.format(len(subtoken_list)))
-    
+    print('vocab size:{}'.format(len(subtoken_list)))
+
     with open(self.vocab_file,'w') as f:
         for token in subtoken_list:
           f.write(token+'\n')

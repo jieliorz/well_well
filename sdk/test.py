@@ -11,7 +11,8 @@ config = Config(project_name='moli',
 				max_length=50,
 				is_tgt_label=False,
 				update_vocab=True,
-				n_observations=10000)
+				extra_reserved_tokens=['<BotName>'],
+				n_observations=100)
 
 if config.init_params['update_semi']:
 	# raw to semi
@@ -19,7 +20,7 @@ if config.init_params['update_semi']:
 
 tokenizer = Tokenizer(config.params)
 config.set_params({'vocab_size':tokenizer.vocab_size})
-
+config.set_params({'update_vocab':False})
 if config.init_params['update_dataset']:
 	# semi to tfrecord(including Tokenization)
 	n_observations=semi_to_dataset(config.params,tokenizer)

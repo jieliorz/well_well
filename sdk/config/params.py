@@ -15,6 +15,8 @@ class Config:
                 update_semi=False,
                 update_vocab=False,
                 update_dataset=False,
+                min_count=4,
+                extra_reserved_tokens=None,
                 n_observations=None):
 
 
@@ -30,6 +32,8 @@ class Config:
             'n_observations': n_observations,
             'is_tgt_label':is_tgt_label,
             'max_length':max_length,
+            'min_count':min_count,
+            'extra_reserved_tokens':extra_reserved_tokens,
             }
 
 
