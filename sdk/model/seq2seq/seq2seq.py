@@ -25,7 +25,7 @@ class Seq2SeqModel:
 
 		with open(os.path.join(fpath,'params.yml'),'r') as f:
 			self.params=yaml.load(f)
-
+		self.tokenizer = Tokenizer(self.params)
 		self.save_file=self.params["save_file"]
 		self.num_epochs=self.params["num_epochs"]
 		self.batch_size=self.params["batch_size"]
@@ -40,16 +40,16 @@ class Seq2SeqModel:
 
 	def build_graph(self):
 
-		self.src = tf.placeholder(tf.int64,[None,None],name="src")
-		self.tgt = tf.placeholder(tf.int64,[None,None],name="tgt")
+		self.src = tf.placeholder(tf.int64,[self.batch_size,None],name="src")
+		self.tgt = tf.placeholder(tf.int64,[self.batch_size,None],name="tgt")
 		self.tgt_in = tf.strided_slice(self.tgt,[0,0],[tf.shape(self.tgt)[0],tf.shape(self.tgt)[1]-1],[1,1],name="tgt_in")
 		self.tgt_out = tf.strided_slice(self.tgt,[0,1],[tf.shape(self.tgt)[0],tf.shape(self.tgt)[1]],[1,1],name="tgt_out")
 
 		self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
-		self.raw_src_len = tf.placeholder(tf.int64,[None,1])
+		self.raw_src_len = tf.placeholder(tf.int64,[self.batch_size,1])
 		self.src_lengths= tf.reshape(self.raw_src_len,shape=[-1],name="src_len")
 
-		self.raw_tgt_len = tf.placeholder(tf.int64,[None,1])
+		self.raw_tgt_len = tf.placeholder(tf.int64,[self.batch_size,1])
 		self.tgt_lengths= tf.reshape(self.raw_tgt_len,shape=[-1],name="tgt_len")
 
 		
@@ -68,8 +68,6 @@ class Seq2SeqModel:
 
 	def train(self):
 
-		dataset_obj=DataSet(self.params)
-		dataset=dataset_obj.prepare_dataset()
 
 		init_train=self.params['init_train']
 
@@ -82,6 +80,7 @@ class Seq2SeqModel:
 			tf.summary.scalar('loss', self.loss)
 			self.output = tf.argmax(self.logits,-1)
 			self.train_op = get_train_op(self.learning_rate,self.loss,self.global_step)
+
 			merged = tf.summary.merge_all()
 			train_writer = tf.summary.FileWriter(fpath + '/train', g)
 
@@ -94,9 +93,13 @@ class Seq2SeqModel:
 					sess.run(init)
 				else:
 					self.saver.restore(sess,self.save_file)
+				
+				dataset_obj=DataSet(self.params)
+				dataset=dataset_obj.prepare_dataset()
 
 				iterator=dataset.make_one_shot_iterator()
 				next_element=iterator.get_next()
+
 				while 1:
 					try:
 						batch=sess.run(next_element)
@@ -107,9 +110,15 @@ class Seq2SeqModel:
 								self.raw_src_len: batch['src_len'],
 								self.raw_tgt_len: batch['tgt_len']
 								}
-						summary,_,_,loss,step= sess.run([merged,self.output,self.train_op,self.loss,self.global_step],feed_dict)
-						train_writer.add_summary(summary, step)
-						print('train step:{} loss:{}'.format(step,loss))
+						summary,tgt_out,output,_,loss,step= sess.run([merged,self.tgt_out,self.output,self.train_op,self.loss,self.global_step],feed_dict)
+
+						if step%100 == 1:
+							for i in range(len(tgt_out)):
+								print(self.tokenizer.decode([int(x) for x in output[i]]))
+								print(self.tokenizer.decode([int(x) for x in tgt_out[i]]))
+						# sys.exit(0)
+						# train_writer.add_summary(summary, step)
+							print('train step:{} loss:{}'.format(step,loss))
 					except tf.errors.OutOfRangeError:
 						print('over')
 						break
@@ -119,21 +128,21 @@ class Seq2SeqModel:
 
 
 
-	def infer(self,batch_size):
-		self.tokenizer = Tokenizer(self.params)
+	def infer(self):
+		
 		self.g=tf.Graph()
 		with self.g.as_default():
 			self.build_graph()
-			decode_mode=self.params['decode_mode']
+			self.decode_mode=self.params['decode_mode']
 			sos_id=SOS_ID
 			eos_id=EOS_ID
-			if decode_mode == 'greedy':
-				self.output=greedy_decode(batch_size,sos_id,eos_id,self.embeddings,
+			if self.decode_mode == 'greedy':
+				self.output=greedy_decode(self.batch_size,sos_id,eos_id,self.embeddings,
 					self.decoder_cell,self.encoder_state,self.projection_layer,
 					self.maximum_iterations)
-			elif decode_mode == 'beam_search':
+			elif self.decode_mode == 'beam_search':
 				beam_width=self.params['beam_width']
-				self.output=beam_search_decode(batch_size,sos_id,eos_id,
+				self.output=beam_search_decode(self.batch_size,sos_id,eos_id,
 					self.embeddings,self.encoder_state,self.decoder_cell,beam_width,
 					self.projection_layer,self.maximum_iterations)
 
@@ -149,17 +158,18 @@ class Seq2SeqModel:
 			ret,ret_len = self.tokenizer.encode(pre_process(sentence))
 
 			feed_dict = {
-					self.src: [ret,ret],
+					self.src: [ret],
 					self.dropout_keep_prob: keep_prob,
-					self.raw_src_len: [[ret_len],[ret_len]],
+					self.raw_src_len: [[ret_len]],
 					}
 			output= self.sess.run([self.output],feed_dict)
 			# print(output[0],output[0][0].dtype)
 			# logger.info("batch output:{}".format(output))
-			# print(self.tokenizer.decode([int(i) for i in list(output[0][0])]))
+			if self.decode_mode == 'greedy':
+				print(self.tokenizer.decode([int(i) for i in list(output[0][0])]))
 
 
-
-			for i in range(beam_width):
-				res=self.tokenizer.decode([int(x) for x in list(output[0][i])])
-				print(res)
+			elif self.decode_mode == 'beam_search':
+				for i in range(beam_width):
+					res=self.tokenizer.decode([int(x) for x in list(output[0][i])])
+					print(res)

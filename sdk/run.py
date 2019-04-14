@@ -1,9 +1,11 @@
 from model.seq2seq.seq2seq import Seq2SeqModel
 
 model=Seq2SeqModel()
-model.train()
-# model.infer(batch_size=2)
-# model.predict('你几岁了')
+# model.train()
+model.infer()
+while 1:
+	sentence = input('you:')
+	model.predict(sentence)
 
 # sentence='打开收音机'
 # ret,ret_len = tokenizer.encode(sentence,padding=True)

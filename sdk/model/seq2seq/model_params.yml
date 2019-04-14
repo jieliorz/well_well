@@ -10,5 +10,5 @@ batch_size: 32
 num_epochs: 10
 
 #decode
-decode_mode: greedy
+decode_mode: beam_search
 beam_width: 3

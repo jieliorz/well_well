@@ -22,7 +22,8 @@ def get_loss(logits,tgt_out,tgt_lengths,maximum_iterations):
 		crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
 		labels=tgt_out, logits=logits)
 		target_weights = tf.sequence_mask(tgt_lengths, maximum_iterations, dtype=tf.float32)
-		loss = tf.reduce_sum(crossent * target_weights)/tf.to_float(tf.reduce_sum(tgt_lengths))
+		loss = tf.reduce_sum(crossent * target_weights)/tf.to_float(tf.shape(tgt_out)[0])
+		# tf.to_float(tf.reduce_sum(tgt_lengths))
 		return loss
 
 def get_train_op(learning_rate,loss,global_step):

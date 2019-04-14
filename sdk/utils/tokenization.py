@@ -7,6 +7,7 @@ import sys
 import re
 import glob
 import pickle
+import tensorflow as tf
 from collections import defaultdict
 # import logging
 
@@ -230,7 +231,7 @@ def _generate_alphabet_dict(iterable):
   alphabet |= _ESCAPE_CHARS  # Add escape characters to alphabet set.
   return alphabet
 
-def _generate_subtokens(token_counts, alphabet, min_count,reserved_tokens,num_iterations=4):
+def _generate_subtokens(token_counts, alphabet, min_count,reserved_tokens,max_subtoken_length = 2,num_iterations=4):
     """Create a list of subtokens in decreasing order of frequency.
     Args:
         token_counts: dict mapping str tokens -> int count
@@ -246,7 +247,7 @@ def _generate_subtokens(token_counts, alphabet, min_count,reserved_tokens,num_it
     """
     # Use alphabet set to create initial list of subtokens
     subtoken_list = list(alphabet)
-    max_subtoken_length = 2
+    
     # On each iteration, segment all words using the subtokens defined in
     # subtoken_dict, count how often the resulting subtokens appear, and update
     # the dictionary with subtokens w/ high enough counts.
@@ -282,13 +283,26 @@ def _count_tokens(files, file_byte_limit=1e6):
   token_counts = collections.defaultdict(int)
 
   for filepath in files:
-    with open(filepath, "r") as reader:
+    with tf.gfile.Open(filepath, mode="r") as reader:
+      file_byte_budget = file_byte_limit
       counter = 0
+      lines_to_skip = int(reader.size() / (file_byte_budget * 2))
       for line in reader:
+        if counter < lines_to_skip:
+          counter += 1
+        else:
+          if file_byte_budget < 0:
+            break
+          line = line.strip()
+          file_byte_budget -= len(line)
+          counter = 0
+
           # Add words to token counts
           for token in whitespace_tokenize(line):
             token_counts[token] += 1
   return token_counts
+
+
 
 def _list_to_index_dict(lst):
   """Create dictionary mapping list items to their indices in the list."""
@@ -299,16 +313,17 @@ class Tokenizer:
   def __init__(self,
               params):
     self.params = params
+    
     self.vocab_file = self.params['vocab_file']
-
+    extra_reserved_tokens = self.params['extra_reserved_tokens']
+    print('extra_reserved_tokens:{}'.format(extra_reserved_tokens))
+    if extra_reserved_tokens:
+      RESERVED_TOKENS.extend(extra_reserved_tokens)    
+    self.reserved_tokens = RESERVED_TOKENS
 
     if self.params['update_vocab'] or (not os.path.isfile(self.vocab_file)):
       print('start to generate vocab')
       min_count = self.params['min_count']
-      extra_reserved_tokens = self.params['extra_reserved_tokens']
-      print('extra_reserved_tokens:{}'.format(extra_reserved_tokens))
-      if extra_reserved_tokens:
-        RESERVED_TOKENS.extend(extra_reserved_tokens)
       self.subtoken_list = self.make_vocab(min_count)
     else:
       self.subtoken_list = [subtoken.strip() for subtoken in open(self.vocab_file,'r').readlines()]
@@ -327,7 +342,7 @@ class Tokenizer:
     """Encodes a string into a list of int subtoken ids."""
     ret = []
     tokens = whitespace_tokenize(raw_string)
-    
+    # print(tokens)
 
     for token in tokens:
       ret.extend(self._token_to_subtoken_ids(token))
@@ -335,11 +350,12 @@ class Tokenizer:
     ret_padding_len = ret_len
     if start_mark:
       ret = [SOS_ID] + ret
-      ret_padding_len += 1
+      ret_padding_len+=1
     if end_mark:
       ret = ret + [EOS_ID]
-      ret_padding_len += 1
+      ret_padding_len+=1
     if padding:
+      ret_len+=1
       padding_len = self.params['max_length']
       if ret_padding_len > padding_len:
         return None,None
@@ -357,7 +373,8 @@ class Tokenizer:
     assert isinstance(subtokens, list) and isinstance(subtokens[0], int), (
         "Subtokens argument passed into decode() must be a list of integers.")
     res = ''.join(self._subtoken_ids_to_tokens(subtokens))
-
+    res=res.replace('<sep>',' ')
+    res=res.split('</s>')[0] + '</s>'
     return res
 
   def _token_to_subtoken_ids(self,token):
@@ -398,10 +415,11 @@ class Tokenizer:
       datafiles.append(self.params['tgt_file'])
     print('vocab from: {}'.format(datafiles))
     token_counts=_count_tokens(files=datafiles)
+    print('token_counts len: {}'.format(len(token_counts)))
     alphabet = _generate_alphabet_dict(token_counts)
+    print('alphabet: {}'.format(len(alphabet)))
     subtoken_list = _generate_subtokens(
-        token_counts, alphabet, min_count,RESERVED_TOKENS)  
-    
+        token_counts, alphabet, min_count,self.reserved_tokens,max_subtoken_length = 2,num_iterations=8)
     # logger.info('vocab_size: {}'.format(len(subtoken_list)))
     print('vocab size:{}'.format(len(subtoken_list)))
 

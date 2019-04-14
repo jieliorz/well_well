@@ -8,11 +8,11 @@ config = Config(project_name='moli',
 				model_type='seq2seq',
 				update_semi=True,
 				update_dataset=True,
-				max_length=50,
+				max_length=30,
 				is_tgt_label=False,
 				update_vocab=True,
 				extra_reserved_tokens=['<BotName>'],
-				n_observations=100)
+				n_observations=10000)
 
 if config.init_params['update_semi']:
 	# raw to semi

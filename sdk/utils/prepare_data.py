@@ -23,15 +23,15 @@ def produce_semi(params):
 	raw_data_dir = params['raw_data_dir']
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
-	# n_observations = params['n_observations']
-	# max_length = params['max_length']
+	n_observations = params['n_observations']
+	max_length = params['max_length']
 
 	raw_files = glob.glob(os.path.join(raw_data_dir,'*.txt'))
 	print('semi from: {}'.format(raw_files))
 	iterator = read_raw_files(raw_files)
 	src_writer = open(src_file,'w')
 	tgt_writer = open(tgt_file,'w')
-
+	cnt = 0
 	for src,tgt in iterator:
 		src=pre_process(src,keep_sep=True)
 		if not src:
@@ -41,6 +41,10 @@ def produce_semi(params):
 			continue		
 		src_writer.write(src.strip()+'\n')
 		tgt_writer.write(tgt.strip()+'\n')
+		cnt+=1
+		if n_observations:
+			if cnt > n_observations:
+				break
 
 	src_writer.close()
 	tgt_writer.close()
@@ -86,7 +90,6 @@ def serialize_example(src, tgt, src_len, tgt_len):
 
 	# Create a dictionary mapping the feature name to the tf.Example-compatible
 	# data type.
-
 	feature = {
 		'src': _int64_feature(src),
 		'src_len':_int64_feature([src_len]),

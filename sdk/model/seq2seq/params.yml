@@ -1,19 +1,20 @@
-batch_size: 32
+batch_size: 1
 beam_width: 3
 dataset_file: ../data/moli/dataset/dataset.tfrecord
-decode_mode: greedy
+decode_mode: beam_search
 embedding_size: 128
-extra_reserved_tokens: [<BotName>]
+extra_reserved_tokens:
+- <BotName>
 hidden_size: 128
-init_train: true
+init_train: false
 is_tgt_label: false
 keep_prob: 0.7
 learning_rate: 0.002
-max_length: 50
+max_length: 30
 min_count: 4
 model_dir: model/seq2seq
-n_observations: 100
-num_epochs: 10
+n_observations: 10000
+num_epochs: 30
 project_name: moli
 raw_data_dir: ../data/moli/raw
 save_file: ../release/moli/model/seq2seq/model.ckpt
@@ -23,4 +24,4 @@ update_dataset: true
 update_semi: true
 update_vocab: false
 vocab_file: ../release/moli/vocab/vocab.txt
-vocab_size: 23882
+vocab_size: 5809

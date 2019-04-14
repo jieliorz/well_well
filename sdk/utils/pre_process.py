@@ -94,16 +94,18 @@ def pre_process(sentence,keep_sep=False):
                 for w in word:
                     if w == '<sep>':
                         if keep_sep:
-                            if len(new_reg_sentence) and new_reg_sentence[-1] != '<sep>':
+                            if len(new_reg_sentence) and (new_reg_sentence[-1] != '<sep>'):
                                 new_reg_sentence.append('<sep>')
                     else:
                         new_reg_sentence.append(w)
             else:
                 if word == '<sep>':
-                    continue
-                if len(new_reg_sentence) and new_reg_sentence[-1] != '<sep>':
-                    new_reg_sentence.append(word)
+                    if keep_sep:
+                        if len(new_reg_sentence) and (new_reg_sentence[-1] != '<sep>'):
+                            new_reg_sentence.append('<sep>')
 
+                else:
+                    new_reg_sentence.append(word)
         if len(new_reg_sentence) > 0:
             if new_reg_sentence[-1] == '<sep>':
                 new_reg_sentence = new_reg_sentence[:-1]
@@ -114,7 +116,7 @@ def pre_process(sentence,keep_sep=False):
 
 
 if __name__ == '__main__':
-    # sentence='处理原始,,,数据'
+    string='处理原始,,,数据'
     
-    string=',,,'
+    # string=',,,'
     print(pre_process(string,keep_sep=True))
