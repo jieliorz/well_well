@@ -5,12 +5,12 @@ from utils.data_helper import DataSet
 import os
 import yaml
 config = Config(project_name='moli',
-				model_type='seq2seq',
-				update_semi=True,
-				update_dataset=True,
+				model_type='transformer',
+				update_semi=False,
+				update_dataset=False,
 				max_length=30,
 				is_tgt_label=False,
-				update_vocab=True,
+				update_vocab=False,
 				extra_reserved_tokens=['<BotName>'],
 				n_observations=10000)
 
@@ -31,9 +31,9 @@ if not config.init_params['n_observations']:
 
 print(config.params)
 
-final_params_path = os.path.join(config.init_params['model_dir'],'params.yml')
+final_params_path = './params.yml'
 with open(final_params_path,'w') as f:
 	yaml.dump(config.init_params,f)
 
-dataset_obj=DataSet(config.params)
-dataset=dataset_obj.prepare_dataset()
+# dataset_obj=DataSet(config.params)
+# dataset=dataset_obj.prepare_dataset()

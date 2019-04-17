@@ -70,7 +70,7 @@ class Config:
 
         self.init_params['vocab_file'] = vocab_file
         self.init_params['save_file'] = save_file
-
+        self.init_params['save_dir'] = save_dir
         
         self.init_params['raw_data_dir'] = raw_data_dir
         self.init_params['model_dir'] = model_dir
