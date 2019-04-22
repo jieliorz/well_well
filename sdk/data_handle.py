@@ -4,15 +4,15 @@ from utils.tokenization import Tokenizer
 from utils.data_helper import DataSet
 import os
 import yaml
-config = Config(project_name='moli',
-				model_type='transformer',
-				update_semi=False,
-				update_dataset=False,
+config = Config(project_name='poc',
+				model_type='rnn',
+				update_semi=True,
+				update_dataset=True,
 				max_length=30,
-				is_tgt_label=False,
-				update_vocab=False,
-				extra_reserved_tokens=['<BotName>'],
-				n_observations=10000)
+				is_tgt_label=True,
+				update_vocab=True,
+				# extra_reserved_tokens=['<BotName>'],
+				n_observations=None)
 
 if config.init_params['update_semi']:
 	# raw to semi
@@ -31,7 +31,8 @@ if not config.init_params['n_observations']:
 
 print(config.params)
 
-final_params_path = './params.yml'
+final_params_path = os.path.join(config.params['model_dir'],'params.yml')
+print(final_params_path)
 with open(final_params_path,'w') as f:
 	yaml.dump(config.init_params,f)
 

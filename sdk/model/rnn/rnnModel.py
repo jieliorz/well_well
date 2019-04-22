@@ -1,8 +1,15 @@
 import tensorflow as tf
+from utils.tokenization import Tokenizer,EOS_ID,SOS_ID
+import yaml
+import numpy as np
 
 class TextRnn:
-	def __init__(self,params):
+	def __init__(self):
+
+		with open('./params.yml','r') as f:
+			params=yaml.load(f)
 		self.params = params
+		self.tokenizer = Tokenizer(self.params)
 		self.embedding_size=self.params["embedding_size"]
 		self.vocab_size=self.params["vocab_size"]
 		self.input_size=self.params["max_length"]
@@ -114,7 +121,10 @@ class TextRnn:
 			self.saver = tf.train.Saver()
 			self.sess = tf.Session()
 			self.saver.restore(self.sess,save_file)
-	def predict(self,line_encode,line_len):
+	
+
+	def predict(self,sentence):
+		line_encode,line_len = self.tokenizer.encode(sentence,padding=True)
 		with self.sess.as_default():
 			feed_dict = {
 					self.src: [line_encode],
@@ -124,28 +134,56 @@ class TextRnn:
 			prediction = self.sess.run(self.predictions,feed_dict)
 
 			return self.params['labels'][int(prediction[0])]
-	# def test(self,dateset):
-	# 	g=tf.Graph()
-	# 	with g.as_default():
-	# 		self.build()
-	# 		self.saver = tf.train.Saver()
-	# 		save_dir='rnnModel/'
-	# 		sess = tf.Session()
-	# 		self.saver.restore(sess,save_dir)
-	# 		with sess.as_default():
-	# 			for batch in batch_iter(data=dateset, batch_size=self.batch_size, num_epochs=1,shuffle=False):
-	# 				x_train=[x[0] for x in batch]
-	# 				y_train=[x[1] for x in batch]
-	# 				length=[x[2] for x in batch]
+	
+	def test(self,sentence_list):
+		res = [self.tokenizer.encode(sentence,padding=True) for sentence in sentence_list]
+		line_encode_list = [each[0] for each in res]
+		line_len_list = [[each[1]] for each in res]
 		
-	# 				feed_dict = {
-	# 						self.x_train: x_train,
-	# 						self.y_train: y_train,
-	# 						self.dropout_keep_prob: 1,
-	# 						self.seq_lengths:length
-	# 						}
-	# 				_, _, loss, accuracy = sess.run(
-	# 				[self.train_op, self.global_step, self.loss, self.accuracy],
-	# 				feed_dict)
-					
-	# 				print('test loss:{} accuracy:{}'.format(loss,accuracy))
+		with self.sess.as_default():
+			feed_dict = {
+					self.src: line_encode_list,
+					self.dropout_keep_prob: 1.0,
+					self.raw_seq_len: line_len_list
+					}
+			prediction = self.sess.run(self.predictions,feed_dict)
+
+			return [self.params['labels'][int(prediction[i])] for i in range(len(prediction))]
+
+
+
+	def test_batch(self,dataset):
+		save_file=self.params["save_file"]
+		g=tf.Graph()
+		with g.as_default():
+			self.build()
+			self.saver = tf.train.Saver()
+			sess = tf.Session()
+			with sess.as_default():
+				self.saver.restore(sess,save_file)
+				
+				iterator=dataset.make_one_shot_iterator()
+				next_element=iterator.get_next()
+				while 1:
+					try:
+						batch=sess.run(next_element)
+						# if batch['src'].shape[0] != self.batch_size:
+						# 	break
+						feed_dict = {
+								self.src: batch['src'],
+								self.tgt_raw: batch['tgt'],
+								self.dropout_keep_prob: 1.0,
+								self.raw_seq_len: batch['src_len']
+								}
+						loss, accuracy = sess.run([self.loss, self.accuracy],feed_dict)
+						if accuracy != 1:
+							predictions=sess.run([self.predictions],feed_dict)
+							predictions=list(predictions[0])
+							tgt=list(np.reshape(batch['tgt'],[-1]))
+							res={self.tokenizer.decode([int(x) for x in batch['src'][i]]): 'real:'+self.params['labels'][int(tgt[i])]+'/predict:'+self.params['labels'][int(predictions[i])] for i in range(len(tgt)) if int(predictions[i]) != int(tgt[i])}
+							print(res)
+							break
+						print('loss:{} accuracy:{}'.format(loss,accuracy))
+					except tf.errors.OutOfRangeError:
+						print('over')
+						break

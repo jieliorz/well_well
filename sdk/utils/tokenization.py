@@ -375,6 +375,7 @@ class Tokenizer:
     res = ''.join(self._subtoken_ids_to_tokens(subtokens))
     res=res.replace('<sep>',' ')
     res=res.split('</s>')[0] + '</s>'
+    res=res.replace('<pad>','')
     return res
 
   def _token_to_subtoken_ids(self,token):

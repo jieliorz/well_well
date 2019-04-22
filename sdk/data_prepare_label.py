@@ -32,12 +32,12 @@
 
 
 
-import tensorflow as tf
+# import tensorflow as tf
 
-tgt = tf.placeholder(tf.int32,[None,None],name="tgt")
-# tgt_in=tf.concat((tf.strided_slice(tgt,[0,0],[tf.shape(tgt)[0],2],[1,1]),tf.strided_slice(tgt,[0,3],[tf.shape(tgt)[0],tf.shape(tgt)[1]],[1,1])),axis=1)
-sess = tf.Session()
-a = tf.fill(tgt,)
-print(sess.run(a,{tgt:[1,2,3]}))
-# print(sess.run(tgt_in,{tgt:[[1,2,3,4,5],[4,5,6,7,8]]}))
+# tgt = tf.placeholder(tf.int32,[None,None],name="tgt")
+# # tgt_in=tf.concat((tf.strided_slice(tgt,[0,0],[tf.shape(tgt)[0],2],[1,1]),tf.strided_slice(tgt,[0,3],[tf.shape(tgt)[0],tf.shape(tgt)[1]],[1,1])),axis=1)
+# sess = tf.Session()
+# a = tf.fill(tgt,)
+# print(sess.run(a,{tgt:[1,2,3]}))
+# # print(sess.run(tgt_in,{tgt:[[1,2,3,4,5],[4,5,6,7,8]]}))
 

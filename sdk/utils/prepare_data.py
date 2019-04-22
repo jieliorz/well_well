@@ -4,6 +4,14 @@ import jieba
 from .tokenization import Tokenizer
 from .pre_process import pre_process
 import tensorflow as tf
+
+
+def dir_create(file_dir):
+    if not os.path.isdir(file_dir):
+        os.makedirs(file_dir)
+
+
+
 ##################################################################################################################
 def read_raw_files(files):
 	for file in files:
@@ -21,10 +29,14 @@ def produce_semi(params):
 	from raw to semi, produce 2 files, src.txt and tgt.txt
 	"""
 	raw_data_dir = params['raw_data_dir']
+	semi_dir = params['semi_dir']
+	dir_create(semi_dir)
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
+
 	n_observations = params['n_observations']
 	max_length = params['max_length']
+
 
 	raw_files = glob.glob(os.path.join(raw_data_dir,'*.txt'))
 	print('semi from: {}'.format(raw_files))
@@ -70,7 +82,6 @@ def feature_lable_iter(file,labels):
 			line = line.strip()
 			if line not in label2idx:
 				raise ValueError('{} is not in labels'.format(line))
-
 			feature = [label2idx[line]]
 			yield feature,1
 
@@ -110,8 +121,11 @@ def semi_to_dataset(params,tokenizer):
 	# Write the `tf.Example` observations to the file.
 	src_file = params['src_file']
 	tgt_file = params['tgt_file']
+	dataset_dir = params['dataset_dir']
+	dir_create(dataset_dir)
 	dataset_file = params['dataset_file']
 	n_observations = params['n_observations']
+
 	with tf.python_io.TFRecordWriter(dataset_file) as writer:
 		src_iter = feature_sent_iter(src_file,tokenizer,padding=True,start_mark=False,end_mark=False)
 		if params['is_tgt_label']:

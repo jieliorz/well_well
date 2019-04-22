@@ -1,0 +1,30 @@
+batch_size: 32
+dataset_dir: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/dataset
+dataset_file: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/dataset/dataset.tfrecord
+dropout_keep_prob: 0.7
+embedding_size: 64
+extra_reserved_tokens: null
+hidden_size: 128
+init_train: true
+is_tgt_label: true
+labels: [cancel, fav, resume, unfav, change, help, open, return, 'yes', close, next,
+  pause, showfav, exit, 'no', previous, stop]
+learning_rate: 0.002
+max_length: 30
+min_count: 4
+mode: train
+model_dir: model/rnn
+n_observations: 6649
+num_epochs: 3
+project_name: poc
+raw_data_dir: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/raw
+save_dir: /home/lijie/Documents/mycodes/for_github/well_well/release/poc/model/rnn
+save_file: /home/lijie/Documents/mycodes/for_github/well_well/release/poc/model/rnn/model.ckpt
+semi_dir: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/semi
+src_file: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/semi/src.txt
+tgt_file: /home/lijie/Documents/mycodes/for_github/well_well/data/poc/semi/tgt.txt
+update_dataset: true
+update_semi: true
+update_vocab: false
+vocab_file: /home/lijie/Documents/mycodes/for_github/well_well/release/poc/vocab/vocab.txt
+vocab_size: 1357

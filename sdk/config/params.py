@@ -3,6 +3,10 @@ import os
 import yaml
 
 
+def dir_create(file_dir):
+    if not os.path.isdir(file_dir):
+        os.makedirs(file_dir)
+
 class Config:
     """
     main config for all the model
@@ -35,27 +39,23 @@ class Config:
             'min_count':min_count,
             'extra_reserved_tokens':extra_reserved_tokens,
             }
-
-
         # dirs
         # raw_data 原始文件 ， src=source， tgt=target
 
         #关于模型，生成的dir路径
-        raw_data_dir = os.path.join('../data',project_name,'raw') 
-        semi_dir = os.path.join('../data',project_name,'semi') 
-        dataset_dir = os.path.join('../data',project_name,'dataset') 
-        vocab_dir = os.path.join('../release',project_name,'vocab')
-        save_dir = os.path.join('../release',project_name,'model',model_type)
+        raw_data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'data',project_name,'raw') 
+        semi_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'data',project_name,'semi') 
+        dataset_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'data',project_name,'dataset') 
+        vocab_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'release',project_name,'vocab')
+        save_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'release',project_name,'model',model_type)
 
         # 模型文件存储地
         model_dir = os.path.join('model',model_type)
-
-        self._dir_create(semi_dir)
-        self._dir_create(dataset_dir)
-        self._dir_create(vocab_dir)
-        self._dir_create(save_dir)
-        self._dir_create(model_dir)
-
+        dir_create(dataset_dir)
+        dir_create(semi_dir)
+        dir_create(vocab_dir)
+        dir_create(save_dir)
+        dir_create(model_dir)
         # semi_dir 下有行行对应的两个文件
         src_file = os.path.join(semi_dir,'src.txt')
         tgt_file = os.path.join(semi_dir,'tgt.txt')
@@ -63,6 +63,10 @@ class Config:
 
         vocab_file = os.path.join(vocab_dir,'vocab.txt')
         save_file = os.path.join(save_dir,'model.ckpt')
+
+
+        self.init_params['semi_dir'] = semi_dir
+        self.init_params['dataset_dir'] = dataset_dir
 
 
         self.init_params['src_file'] = src_file
@@ -76,10 +80,6 @@ class Config:
         self.init_params['model_dir'] = model_dir
         self.init_params['dataset_file'] = dataset_file
 
-
-    def _dir_create(self,file_dir):
-        if not os.path.isdir(file_dir):
-            os.makedirs(file_dir)
 
     def set_params(self,config_params):
         self.init_params.update(config_params)

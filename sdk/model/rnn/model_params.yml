@@ -15,9 +15,8 @@ num_epochs: 3
 labels:
  - cancel
  - fav
- - 'null'
  - resume
- - unFav
+ - unfav
  - change
  - help
  - open
@@ -26,7 +25,7 @@ labels:
  - close
  - next
  - pause
- - showFav
+ - showfav
  - exit
  - 'no'
  - previous
